@@ -252,9 +252,15 @@ def trigger_buzzer(diff):
     # If the user is off by an absolute value of 2, the buzzer should sound twice every second
     # If the user is off by an absolute value of 1, the buzzer should sound 4 times a second
     print("Buzzer")
-
-    global buzzerSetting
-    buzzerSetting = diff
+    Buzzer.start(50)
+    if diff ==3:
+        Buzzer.ChangeFrequency(1)#1 per sec
+    elif diff == 2:
+        Buzzer.ChangeFrequency(3) #2 per sec
+    else:
+        Buzzer.ChangeFrequency(6) # 4 per sec
+    GPIO.output(buzzer,GPIO.HIGH)
+    
     
 
 
