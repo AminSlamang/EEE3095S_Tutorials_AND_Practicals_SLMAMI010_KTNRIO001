@@ -193,7 +193,7 @@ def btn_guess_pressed(channel):
         pass
     buttonTime = time.time() - start_t
     if buttonTime > 3 :
-        AccuracyLED.ChangeDutyCycle(0)
+        AccuracyLED.stop()
         for i in LED_value:
             GPIO.output(i,(0))
         end_of_game = True
@@ -209,12 +209,13 @@ def btn_guess_pressed(channel):
                 for a in range(3-letters):
                     name += "Z"
             print(name)
-            AccuracyLED.ChangeDutyCycle(0)
+            AccuracyLED.stop()
             for i in LED_value:
                 GPIO.output(i,(0))
             save_scores(name,score)
             end_of_game = True
         else:
+            AccuracyLED.start(0)
             accuracy_leds()
             diff = abs(value - guess_Value)
             if diff < 4:
