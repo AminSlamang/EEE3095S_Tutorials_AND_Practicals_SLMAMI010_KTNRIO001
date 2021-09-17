@@ -7,10 +7,9 @@ import time
 
 # some global variables that need to change as we run the program
 end_of_game = None  # set if the user wins or ends the game
-guess_Value = 0
-score =0
-value = 0
-buzzerSetting =0
+guess_Value = 0 #Stores user's current guess
+score =0 # Stores the current game score
+value = 0 # Stores randomly generated number
 # DEFINE THE PINS USED HERE
 LED_value = [11, 13, 15]
 LED_accuracy = 32
