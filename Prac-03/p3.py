@@ -35,7 +35,7 @@ def welcome():
 
 # Print the game menu
 def menu():
-    global end_of_game
+    global end_of_game, score
     end_of_game = False
     option = input("Select an option:   H - View High Scores     P - Play Game       Q - Quit\n")
     option = option.upper()
@@ -46,6 +46,7 @@ def menu():
         display_scores(s_count, ss)
     elif option == "P":
         os.system('clear')
+        score = 0
         print("Starting a new round!")
         print("Use the buttons on the Pi to make and submit your guess!")
         print("Press and hold the guess button to cancel your game")
@@ -97,7 +98,7 @@ def setup():
     GPIO.setup(LED_accuracy,GPIO.OUT)
     global AccuracyLED
     AccuracyLED = GPIO.PWM(LED_accuracy, 1000)
-    AccuracyLED.start(0)
+    
     # Setup debouncing and callbacks
     GPIO.add_event_detect(btn_increase, GPIO.FALLING, callback=btn_increase_pressed, bouncetime=300)
     GPIO.add_event_detect(btn_submit, GPIO.FALLING, callback=btn_guess_pressed, bouncetime=300)
@@ -109,19 +110,13 @@ def fetch_scores():
     # get however many scores there are
     
     score_count = int((eeprom.read_block(0,1))[0])
-    print(((eeprom.read_block(0,32))))
-    print(((eeprom.read_block(1,32))))
-    print(((eeprom.read_block(2,32))))
-    print(((eeprom.read_block(3,32))))
-    print(score_count)
     # Get the scores
     scores = []
     for i in range(score_count):
         scores.append(eeprom.read_block(i+1,4))
         for j in range(3):
-            scores[i*4][j] = chr(scores[i*4][j])
-            print(scores[i*4][j])
-        scores[i*4][3] = int(scores[i*4][3])
+            scores[i][j] = chr(scores[i][j])
+        scores[i][3] = int(scores[i][3])
     # convert the codes back to ascii
     
     # return back the results
@@ -145,17 +140,18 @@ def save_scores(name, score):
         for j in range(3):
             names += chr(scores[i][j])
         nscores.append([names,int(scores[i][3])] )
+    
     nscores.append([name,score])
     nscores.sort(key=lambda x: x[1])
+
     eeprom.write_block(0, [score_count+1])
-    data_to_write = []
-    for score in nscores:
+    for i, score in enumerate(nscores):
         # get the string
-        for letter in range(3):
-            l = (score[0])[letter]
-            data_to_write.append(ord(l))
+        data_to_write = []
+        for letter in score[0]:
+            data_to_write.append(ord(letter))
         data_to_write.append(score[1])
-    eeprom.write_block(1, data_to_write)
+        eeprom.write_block(i+1, data_to_write)
 
 # Generate guess number
 def generate_number():
@@ -196,19 +192,19 @@ def btn_guess_pressed(channel):
         AccuracyLED.stop()
         for i in LED_value:
             GPIO.output(i,(0))
+        Buzzer.stop()
         end_of_game = True
     else:
+        score +=1
         if value == guess_Value:
-            name = input("Guess is correct. \n Please enter you name(3 letters)")
-            score +=1
+            Buzzer.stop()
+            name = input("Guess is correct. \n Please enter you name(3 letters)")  
             letters = len(name)
-            print(letters)
             if(letters > 3):
                 name = name[:3]
             elif (letters < 3):
                 for a in range(3-letters):
                     name += "Z"
-            print(name)
             AccuracyLED.stop()
             for i in LED_value:
                 GPIO.output(i,(0))
@@ -236,9 +232,6 @@ def accuracy_leds():
     # - For example if the answer is 6 and a user guesses 4, the brightness should be at 4/6*100 = 66%
     # - If they guessed 7, the brightness would be at ((8-7)/(8-6)*100 = 50%
     global AccuracyLED,value,guess_Value
-    print("AccLED")
-    print(value)
-    print(guess_Value)
     if guess_Value>value:
         AccuracyLED.ChangeDutyCycle((((8-guess_Value)/(8-value))*100))
     else:
@@ -252,7 +245,6 @@ def trigger_buzzer(diff):
     # If the user is off by an absolute value of 3, the buzzer should sound once every second
     # If the user is off by an absolute value of 2, the buzzer should sound twice every second
     # If the user is off by an absolute value of 1, the buzzer should sound 4 times a second
-    print("Buzzer")
     Buzzer.start(50)
     if diff ==3:
         Buzzer.ChangeFrequency(1)#1 per sec
@@ -270,10 +262,7 @@ if __name__ == "__main__":
         # Call setup function
         setup()
         welcome()
-        b = 1
         while True:
-            print("Menu accessed count: {}".format(b))
-            b += 1
             menu()
             pass
     except Exception as e:
