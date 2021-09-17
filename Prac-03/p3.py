@@ -112,11 +112,12 @@ def fetch_scores():
     # Get the scores
     scores = []
     for i in range(score_count):
+        # convert the codes back to ascii
         scores.append(eeprom.read_block(i+1,4))
         for j in range(3):
             scores[i][j] = chr(scores[i][j])
         scores[i][3] = int(scores[i][3])
-    # convert the codes back to ascii
+    
     
     # return back the results
 
@@ -124,12 +125,8 @@ def fetch_scores():
 
 
 # Save high scores
-def save_scores(name, score):
-    # fetch scores
-    # include new score
-    # sort
-    # update total amount of scores
-    # write new scores
+def save_scores(name, score):  
+     # fetch scores
     score_count = int((eeprom.read_block(0,1))[0])
     scores = []
     nscores =[]
@@ -139,11 +136,13 @@ def save_scores(name, score):
         for j in range(3):
             names += chr(scores[i][j])
         nscores.append([names,int(scores[i][3])] )
-    
+    # include new score
     nscores.append([name,score])
+    # sort
     nscores.sort(key=lambda x: x[1])
-
+    # update total amount of scores
     eeprom.write_block(0, [score_count+1])
+    # write new scores
     for i, score in enumerate(nscores):
         # get the string
         data_to_write = []
@@ -159,10 +158,11 @@ def generate_number():
 
 # Increase button pressed
 def btn_increase_pressed(channel):
-    # Increase the value shown on the LEDs
+    
     # You can choose to have a global variable store the user's current guess, 
     # or just pull the value off the LEDs when a user makes a guess
     global guess_Value 
+    # Increase the value shown on the LEDs
     guess_Value += 1
     if guess_Value >7 :
         guess_Value = 0
@@ -175,18 +175,13 @@ def btn_increase_pressed(channel):
 
 # Guess button
 def btn_guess_pressed(channel):
-    # If they've pressed and held the button, clear up the GPIO and take them back to the menu screen
-    # Compare the actual value with the user value displayed on the LEDs
-    # Change the PWM LED
     # if it's close enough, adjust the buzzer
-    # if it's an exact guess:
-    # - Disable LEDs and Buzzer
-    # - tell the user and prompt them for a name
     start_t = time.time()
     global value, guess_Value,end_of_game,score
     while GPIO.input(channel) == 0:
         pass
     buttonTime = time.time() - start_t
+    # If they've pressed and held the button for more than 3 seconds, clear up the GPIO and take them back to the menu screen
     if buttonTime > 3 :
         AccuracyLED.stop()
         for i in LED_value:
@@ -195,7 +190,11 @@ def btn_guess_pressed(channel):
         end_of_game = True
     else:
         score +=1
+        # Compare the actual value with the user value displayed on the LEDs
         if value == guess_Value:
+            # if it's an exact guess:
+            # - Disable LEDs and Buzzer
+            # - tell the user and prompt them for a name
             Buzzer.stop()
             name = input("Guess is correct. \n Please enter you name(3 letters)")  
             letters = len(name)
@@ -207,20 +206,18 @@ def btn_guess_pressed(channel):
             AccuracyLED.stop()
             for i in LED_value:
                 GPIO.output(i,(0))
+            # - Store the scores back to the EEPROM, being sure to update the score count
             save_scores(name,score)
             end_of_game = True
         else:
+            # Change the PWM LED
             AccuracyLED.start(0)
             accuracy_leds()
             diff = abs(value - guess_Value)
             if diff < 4:
                 trigger_buzzer(diff)
         
-            
-    # - fetch all the scores
-    # - add the new score
-    # - sort the scores
-    # - Store the scores back to the EEPROM, being sure to update the score count
+    
     
 
 
