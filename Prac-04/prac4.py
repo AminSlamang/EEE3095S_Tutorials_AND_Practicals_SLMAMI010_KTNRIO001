@@ -40,14 +40,10 @@ def main():
         if(curr_state!= prev_state):
             if(sampleTime == 10):
                 sampleTime = 5
-                #print(sampleTime)
             elif(sampleTime == 5):
                 sampleTime = 1
-                #print(sampleTime)
             else:
                 sampleTime =10
-                #print(sampleTime)
-                break
         time.sleep(0.15)
 
 def print_output():
